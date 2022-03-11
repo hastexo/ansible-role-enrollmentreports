@@ -1,0 +1,63 @@
+-- -*- mode: sql; -*-
+-- vim: ft=sql
+SELECT
+    u.email,
+    u.username,
+    SUM(IF(e.is_active=1, 1, 0)) AS active_enrollments,
+    SUM(IF(e.is_active=0, 1, 0)) AS inactive_enrollments
+FROM
+    student_courseenrollmentallowed a
+LEFT JOIN
+    auth_user u
+    ON a.email = u.email
+LEFT JOIN
+    student_courseenrollment e
+    ON u.id = e.user_id
+WHERE
+    e.created BETWEEN '{{ _enrollment_report_start_date }}' AND '{{ _enrollment_report_end_date }}'
+GROUP BY
+    email, username
+ORDER BY
+    email, username
+;
+
+
+
+SELECT
+    a.email,
+    u.username,
+    SUM(IF(e.is_active=1, 1, 0)) AS active_enrollments,
+    SUM(IF(e.is_active=0, 1, 0)) AS inactive_enrollments
+FROM
+    auth_user u
+LEFT JOIN
+    student_courseenrollment e
+    ON u.id = e.user_id
+INNER JOIN
+    student_courseenrollmentallowed a
+    ON u.email = a.email
+GROUP BY
+    email, username
+ORDER BY
+    email, username
+;
+
+
+SELECT
+    a.email,
+    u.username,
+    SUM(IF(e.is_active=1, 1, 0)) AS active_enrollments,
+    SUM(IF(e.is_active=0, 1, 0)) AS inactive_enrollments
+FROM
+    auth_user u
+INNER JOIN
+    student_courseenrollment e
+    ON u.id = e.user_id
+RIGHT JOIN
+    student_courseenrollmentallowed a
+    ON u.id = a.user_id
+GROUP BY
+    email, username
+ORDER BY
+    email, username
+;

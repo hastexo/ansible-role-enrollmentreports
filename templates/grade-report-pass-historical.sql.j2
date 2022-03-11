@@ -1,0 +1,22 @@
+-- -*- mode: sql; -*-
+-- vim: ft=sql
+SELECT
+    LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(pcg.course_id, '+', 1), ':', -1)) AS org,
+    LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(pcg.course_id, '+', 2), '+', -1)) AS course,
+    LCASE(SUBSTRING_INDEX(pcg.course_id, '+', -1)) AS run,
+    YEAR(pcg.created) AS 'year',
+    MONTH(pcg.created) AS 'month',
+    COUNT(*) AS 'pass'
+FROM
+    grades_persistentcoursegrade pcg
+INNER JOIN
+    auth_user au
+    ON au.id = pcg.user_id
+WHERE
+    pcg.letter_grade='Pass'
+    AND pcg.created<='{{ enrollment_report_end_date }}'
+GROUP BY
+    org, course, run, year, month
+ORDER BY
+    org, year, month, course, run
+;

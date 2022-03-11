@@ -1,0 +1,11 @@
+---
+enrollment_report_start_date: "{{ lookup('pipe', 'date -I -d \"now - 1 month\"') }}"
+enrollment_report_end_date: "{{ lookup('pipe', 'date -I -d \"now - 1 day\"') }}"
+enrollment_report_path: "/tmp/enrollment-reports"
+enrollment_report_grade_percent: 80
+enrollment_report_format: tsv
+enrollment_report_mail_enable: false
+enrollment_report_mail_subject: "Enrollment reports for {{ enrollment_report_start_date }} - {{ enrollment_report_end_date }}"
+enrollment_report_mail_from: ""
+enrollment_report_mail_to: []
+enrollment_report_mail_cc: []

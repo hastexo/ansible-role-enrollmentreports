@@ -1,0 +1,18 @@
+-- -*- mode: sql; -*-
+-- vim: ft=sql
+SELECT
+    au.email,
+    LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(pcg.course_id, '+', 1), ':', -1)) AS org,
+    LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(pcg.course_id, '+', 2), '+', -1)) AS course,
+    LCASE(SUBSTRING_INDEX(pcg.course_id, '+', -1)) AS run,
+    pcg.letter_grade
+FROM
+    grades_persistentcoursegrade pcg
+INNER JOIN
+    auth_user au
+    ON au.id = pcg.user_id
+WHERE
+    pcg.created BETWEEN '{{ enrollment_report_start_date }}' AND '{{ enrollment_report_end_date }}'
+ORDER BY
+    org, course, run, pcg.created
+;

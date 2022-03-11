@@ -1,0 +1,24 @@
+-- -*- mode: sql; -*-
+-- vim: ft=sql
+SELECT
+    -- SUBSTRING_INDEX(course_id, ':', 1) AS prefix,
+    LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(b.course_id, '+', 1), ':', -1)) AS org,
+    LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(b.course_id, '+', 2), '+', -1)) AS course,
+    LCASE(SUBSTRING_INDEX(b.course_id, '+', -1)) AS run,
+    b.created AS enrollment_date,
+    a.email,
+    c.anonymous_user_id
+FROM
+    student_courseenrollment b
+LEFT JOIN
+    auth_user a
+    ON a.id = b.user_id
+LEFT JOIN
+    student_anonymoususerid c
+    ON b.user_id = c.user_id
+    AND b.course_id = c.course_id
+WHERE
+    b.created BETWEEN '{{ _enrollment_report_start_date }}' AND '{{ _enrollment_report_end_date }}'
+ORDER BY
+    org, course, run, b.created
+;

@@ -1,0 +1,194 @@
+---
+- name: sanitize start and end date facts
+  set_fact:
+    _enrollment_report_start_date: "{{ lookup('pipe', 'date +\"%Y-%m-%d %H:%M:%S\" -d \"' + enrollment_report_start_date|quote + ' 00:00:00\"') }}"
+    _enrollment_report_end_date: "{{ lookup('pipe', 'date +\"%Y-%m-%d %H:%M:%S\" -d \"' + enrollment_report_end_date|quote + ' 23:59:59\"') }}"
+
+- name: define facts for TSV output
+  set_fact:
+    _enrollment_report_delimiter: '\t'
+    _enrollment_report_file_suffix: '.tsv'
+  when: enrollment_report_format == 'tsv'
+
+- name: define facts for CSV output
+  set_fact:
+    _enrollment_report_delimiter: ','
+    _enrollment_report_file_suffix: '.csv'
+  when: enrollment_report_format == 'csv'
+
+- name: create temporary directory to contain reports
+  tempfile:
+    state: directory
+  register: _enrollment_report_directory
+
+- name: fix ownership for report directory
+  become: true
+  become_user: root
+  file:
+    path: "{{ _enrollment_report_directory.path }}"
+    owner: mysql
+    group: mysql
+    mode: '0755'
+    state: directory
+
+- name: set output file names
+  set_fact:
+    _enrollment_report_filename: "enrollment_report_{{ enrollment_report_start_date }}_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_pass_filename: "pass_report_{{ enrollment_report_start_date }}_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_percent_filename: "percent_report_{{ enrollment_report_start_date }}_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_historical_filename: "enrollment_report_historical_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_pass_historical_filename: "pass_report_historical_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_percent_historical_filename: "percent_report_historical_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+
+- name: set output file paths
+  set_fact:
+    _enrollment_report_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_filename }}"
+    _enrollment_report_pass_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_pass_filename }}"
+    _enrollment_report_percent_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_percent_filename }}"
+    _enrollment_report_historical_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_historical_filename }}"
+    _enrollment_report_pass_historical_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_pass_historical_filename }}"
+    _enrollment_report_percent_historical_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_percent_historical_filename }}"
+
+- name: create tempfile for enrollment report SQL
+  tempfile:
+    state: file
+    suffix: .sql
+  register: _enrollment_report_sql
+
+- name: populate enrollment report SQL
+  template:
+    dest: "{{ _enrollment_report_sql.path }}"
+    src: enrollment-report.sql.j2
+    mode: 0644
+
+- name: create tempfile for historical enrollment report SQL
+  tempfile:
+    state: file
+    suffix: .sql
+  register: _enrollment_report_historical_sql
+
+- name: populate historical enrollment report SQL
+  template:
+    dest: "{{ _enrollment_report_historical_sql.path }}"
+    src: enrollment-report-historical.sql.j2
+    mode: 0644
+
+- name: create tempfile for "pass" report SQL
+  tempfile:
+    state: file
+    suffix: .sql
+  register: _enrollment_report_pass_sql
+
+- name: populate "pass" report SQL
+  template:
+    dest: "{{ _enrollment_report_pass_sql.path }}"
+    src: grade-report-pass.sql.j2
+    mode: 0644
+
+- name: create tempfile for historical "pass" report SQL
+  tempfile:
+    state: file
+    suffix: .sql
+  register: _enrollment_report_pass_historical_sql
+
+- name: populate historical "pass" report SQL
+  template:
+    dest: "{{ _enrollment_report_pass_historical_sql.path }}"
+    src: grade-report-pass-historical.sql.j2
+    mode: 0644
+
+- name: create tempfile for "percent" report SQL
+  tempfile:
+    state: file
+    suffix: .sql
+  register: _enrollment_report_percent_sql
+
+- name: populate "percent" report SQL
+  template:
+    dest: "{{ _enrollment_report_percent_sql.path }}"
+    src: grade-report-percent.sql.j2
+    mode: 0644
+
+- name: 'create tempfile for historical "percent" report SQL'
+  tempfile:
+    state: file
+    suffix: .sql
+  register: _enrollment_report_percent_historical_sql
+
+- name: 'populate historical "percent" report SQL'
+  template:
+    dest: "{{ _enrollment_report_percent_historical_sql.path }}"
+    src: grade-report-percent-historical.sql.j2
+    mode: 0644
+
+- name: execute scripts
+  become: true
+  become_user: root
+  shell: "mysql --batch edxapp < {{ item.in }} > {{ item.out }}"  # noqa 301
+  with_items:
+    - in: "{{ _enrollment_report_sql.path }}"
+      out: "{{ _enrollment_report_outfile }}"
+    - in: "{{ _enrollment_report_pass_sql.path }}"
+      out: "{{ _enrollment_report_pass_outfile }}"
+    - in: "{{ _enrollment_report_percent_sql.path }}"
+      out: "{{ _enrollment_report_percent_outfile }}"
+    - in: "{{ _enrollment_report_historical_sql.path }}"
+      out: "{{ _enrollment_report_historical_outfile }}"
+    - in: "{{ _enrollment_report_pass_historical_sql.path }}"
+      out: "{{ _enrollment_report_pass_historical_outfile }}"
+    - in: "{{ _enrollment_report_percent_historical_sql.path }}"
+      out: "{{ _enrollment_report_percent_historical_outfile }}"
+
+- name: ensure output directory exists
+  file:
+    state: directory
+    mode: '0750'
+    name: "{{ enrollment_report_path }}"
+
+- name: fetch enrollment reports
+  synchronize:
+    mode: pull
+    dest: "{{ enrollment_report_path }}/"
+    src: "{{ _enrollment_report_directory.path }}/"
+    use_ssh_args: true
+
+- name: create attachment list
+  set_fact:
+    _enrollment_report_attachments:
+      - "{{ enrollment_report_path }}/{{ _enrollment_report_filename }}"
+      - "{{ enrollment_report_path }}/{{ _enrollment_report_pass_filename }}"
+      - "{{ enrollment_report_path }}/{{ _enrollment_report_percent_filename }}"
+      - "{{ enrollment_report_path }}/{{ _enrollment_report_historical_filename }}"
+      - "{{ enrollment_report_path }}/{{ _enrollment_report_pass_historical_filename }}"
+      - "{{ enrollment_report_path }}/{{ _enrollment_report_percent_historical_filename }}"
+  when: enrollment_report_mail_enable
+
+- name: send out enrollment reports
+  mail:
+    subject: "{{ enrollment_report_mail_subject }}"
+    from: "{{ enrollment_report_mail_from }}"
+    to: "{{ enrollment_report_mail_to }}"
+    cc: "{{ enrollment_report_mail_cc }}"
+    attach: "{{ _enrollment_report_attachments }}"
+    charset: utf8
+  delegate_to: localhost
+  when: enrollment_report_mail_enable
+
+- name: delete enrollment report directory
+  become: true
+  become_user: root
+  file:
+    path: "{{ _enrollment_report_directory.path }}"
+    state: absent
+
+- name: delete SQL files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ _enrollment_report_sql.path }}"
+    - "{{ _enrollment_report_pass_sql.path }}"
+    - "{{ _enrollment_report_percent_sql.path }}"
+    - "{{ _enrollment_report_historical_sql.path }}"
+    - "{{ _enrollment_report_pass_historical_sql.path }}"
+    - "{{ _enrollment_report_percent_historical_sql.path }}"

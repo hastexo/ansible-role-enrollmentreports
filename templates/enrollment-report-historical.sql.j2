@@ -1,0 +1,19 @@
+-- -*- mode: sql; -*-
+-- vim: ft=sql
+SELECT
+    -- SUBSTRING_INDEX(course_id, ':', 1) AS prefix,
+    LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(course_id, '+', 1), ':', -1)) AS org,
+    LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(course_id, '+', 2), '+', -1)) AS course,
+    LCASE(SUBSTRING_INDEX(course_id, '+', -1)) AS run,
+    YEAR(created) AS 'year',
+    MONTH(created) AS 'month',
+    COUNT(*) AS 'enrollments'
+FROM
+    student_courseenrollment
+WHERE
+    created<='{{ enrollment_report_end_date }}'
+GROUP BY
+    org, course, run, year, month
+ORDER BY
+    year, month, org, course, run
+;
