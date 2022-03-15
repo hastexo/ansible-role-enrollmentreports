@@ -1,4 +1,5 @@
 ---
+enrollment_report_database: "edxapp"
 enrollment_report_start_date: "{{ lookup('pipe', 'date -I -d \"now - 1 month\"') }}"
 enrollment_report_end_date: "{{ lookup('pipe', 'date -I -d \"now - 1 day\"') }}"
 enrollment_report_path: "/tmp/enrollment-reports"

@@ -124,7 +124,7 @@
 - name: execute scripts
   become: true
   become_user: root
-  shell: "mysql --batch edxapp < {{ item.in }} > {{ item.out }}"  # noqa 301
+  shell: "mysql --batch {{ enrollment_report_database }} < {{ item.in }} > {{ item.out }}"  # noqa 301
   with_items:
     - in: "{{ _enrollment_report_sql.path }}"
       out: "{{ _enrollment_report_outfile }}"
