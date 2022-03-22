@@ -21,16 +21,6 @@
     state: directory
   register: _enrollment_report_directory
 
-- name: fix ownership for report directory
-  become: true
-  become_user: root
-  file:
-    path: "{{ _enrollment_report_directory.path }}"
-    owner: mysql
-    group: mysql
-    mode: '0755'
-    state: directory
-
 - name: set output file names
   set_fact:
     _enrollment_report_filename: "enrollment_report_{{ enrollment_report_start_date }}_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
