@@ -161,6 +161,11 @@
     cc: "{{ enrollment_report_mail_cc }}"
     attach: "{{ _enrollment_report_attachments }}"
     charset: utf8
+    host: "{{ enrollment_report_mail_host | default(omit) }}"
+    port: "{{ enrollment_report_mail_port | default(omit) }}"
+    username: "{{ enrollment_report_mail_username | default(omit) }}"
+    password: "{{ enrollment_report_mail_password | default(omit) }}"
+    secure: "{{ enrollment_report_mail_secure | default(omit) }}"
   delegate_to: localhost
   when: enrollment_report_mail_enable
 
