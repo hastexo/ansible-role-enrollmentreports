@@ -155,7 +155,7 @@
 
 - name: send out enrollment reports
   mail:
-    subject: "{{ enrollment_report_mail_subject }}"
+    subject: "Enrollment reports for {{ enrollment_report_hostname }} ({{ enrollment_report_start_date }} - {{ enrollment_report_end_date }})"
     from: "{{ enrollment_report_mail_from }}"
     to: "{{ enrollment_report_mail_to }}"
     cc: "{{ enrollment_report_mail_cc }}"
