@@ -11,7 +11,7 @@ SELECT
 FROM
     student_courseenrollment
 WHERE
-    created<='{{ enrollment_report_end_date }}'
+    created<='{{ _enrollment_report_end_datetime }}'
 GROUP BY
     org, course, run, year, month
 ORDER BY

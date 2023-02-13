@@ -1,8 +1,7 @@
 ---
 enrollment_report_hostname: "{{ ansible_host }}"
 enrollment_report_database: "edxapp"
-enrollment_report_start_date: "{{ lookup('pipe', 'date -I -d \"now - 1 month\"') }}"
-enrollment_report_end_date: "{{ lookup('pipe', 'date -I -d \"now - 1 day\"') }}"
+enrollment_report_frequency: "monthly"
 enrollment_report_path: "/tmp/enrollment-reports"
 enrollment_report_grade_percent: 80
 enrollment_report_format: tsv

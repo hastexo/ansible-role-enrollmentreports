@@ -18,7 +18,7 @@ LEFT JOIN
     ON b.user_id = c.user_id
     AND b.course_id = c.course_id
 WHERE
-    b.created BETWEEN '{{ _enrollment_report_start_date }}' AND '{{ _enrollment_report_end_date }}'
+    b.created BETWEEN '{{ _enrollment_report_start_datetime }}' AND '{{ _enrollment_report_end_datetime }}'
 ORDER BY
     org, course, run, b.created
 ;

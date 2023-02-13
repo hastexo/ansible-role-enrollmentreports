@@ -14,7 +14,7 @@ INNER JOIN
     ON au.id = pcg.user_id
 WHERE
     pcg.letter_grade='Pass'
-    AND pcg.created<='{{ enrollment_report_end_date }}'
+    AND pcg.created<='{{ _enrollment_report_end_datetime }}'
 GROUP BY
     org, course, run, year, month
 ORDER BY

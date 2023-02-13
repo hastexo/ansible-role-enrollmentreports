@@ -1,8 +1,25 @@
 ---
-- name: sanitize start and end date facts
+- name: fail on incorrectly set frequency
+  fail:
+    msg: "Incorrect value for enrollment_report_frequency: {{ enrollment_report_frequency }} (must be 'monthly' or 'weekly')."
+  when: 'enrollment_report_frequency not in ["monthly", "weekly"]'
+
+- name: set start date (monthly run)
   set_fact:
-    _enrollment_report_start_date: "{{ lookup('pipe', 'date +\"%Y-%m-%d %H:%M:%S\" -d \"' + enrollment_report_start_date|quote + ' 00:00:00\"') }}"
-    _enrollment_report_end_date: "{{ lookup('pipe', 'date +\"%Y-%m-%d %H:%M:%S\" -d \"' + enrollment_report_end_date|quote + ' 23:59:59\"') }}"
+    _enrollment_report_start_date: "{{ lookup('pipe', 'date +\"%Y-%m-%d\" -d \"today - 1 month\"') }}"
+    _enrollment_report_start_datetime: "{{ lookup('pipe', 'date +\"%Y-%m-%d %H:%M:%S\" -d \"today - 1 month 00:00:00\"') }}"
+  when: enrollment_report_frequency == "monthly"
+
+- name: set start date (weekly run)
+  set_fact:
+    _enrollment_report_start_date: "{{ lookup('pipe', 'date +\"%Y-%m-%d\" -d \"today - 1 week\"') }}"
+    _enrollment_report_start_datetime: "{{ lookup('pipe', 'date +\"%Y-%m-%d %H:%M:%S\" -d \"today - 1 week 00:00:00\"') }}"
+  when: enrollment_report_frequency == "weekly"
+
+- name: set end date
+  set_fact:
+    _enrollment_report_end_date: "{{ lookup('pipe', 'date +\"%Y-%m-%d \" -d \"yesterday\"') }}"
+    _enrollment_report_end_datetime: "{{ lookup('pipe', 'date +\"%Y-%m-%d %H:%M:%S\" -d \"yesterday 23:59:59\"') }}"
 
 - name: define facts for TSV output
   set_fact:
@@ -23,12 +40,12 @@
 
 - name: set output file names
   set_fact:
-    _enrollment_report_filename: "enrollment_report_{{ enrollment_report_start_date }}_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
-    _enrollment_report_pass_filename: "pass_report_{{ enrollment_report_start_date }}_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
-    _enrollment_report_percent_filename: "percent_report_{{ enrollment_report_start_date }}_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
-    _enrollment_report_historical_filename: "enrollment_report_historical_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
-    _enrollment_report_pass_historical_filename: "pass_report_historical_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
-    _enrollment_report_percent_historical_filename: "percent_report_historical_{{ enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_filename: "enrollment_report_{{ _enrollment_report_start_date }}_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_pass_filename: "pass_report_{{ _enrollment_report_start_date }}_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_percent_filename: "percent_report_{{ _enrollment_report_start_date }}_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_historical_filename: "enrollment_report_historical_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_pass_historical_filename: "pass_report_historical_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_percent_historical_filename: "percent_report_historical_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
 
 - name: set output file paths
   set_fact:
@@ -155,7 +172,7 @@
 
 - name: send out enrollment reports
   mail:
-    subject: "Enrollment reports for {{ enrollment_report_hostname }} ({{ enrollment_report_start_date }} - {{ enrollment_report_end_date }})"
+    subject: "Enrollment reports for {{ enrollment_report_hostname }} ({{ _enrollment_report_start_date }} - {{ _enrollment_report_end_date }})"
     from: "{{ enrollment_report_mail_from }}"
     to: "{{ enrollment_report_mail_to }}"
     cc: "{{ enrollment_report_mail_cc }}"

@@ -13,7 +13,7 @@ INNER JOIN
     auth_user au
     ON au.id = pcg.user_id
 WHERE
-    pcg.created BETWEEN '{{ enrollment_report_start_date }}' AND '{{ enrollment_report_end_date }}'
+    pcg.created BETWEEN '{{ _enrollment_report_start_datetime }}' AND '{{ _enrollment_report_end_datetime }}'
 ORDER BY
     org, course, run, pcg.created
 ;
