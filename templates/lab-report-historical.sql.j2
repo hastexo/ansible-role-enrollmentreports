@@ -1,0 +1,33 @@
+-- -*- mode: sql; -*-
+-- vim: ft=sql
+SELECT
+  u.email,
+  LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(s.course_id, '+', 1), ':', -1)) AS org,
+  LCASE(SUBSTRING_INDEX(SUBSTRING_INDEX(s.course_id, '+', 2), '+', -1)) AS course,
+  LCASE(SUBSTRING_INDEX(s.course_id, '+', -1)) AS run,
+  YEAR(sl.suspend_timestamp) AS 'year',
+  MONTH(sl.suspend_timestamp) AS 'month',
+  SUM(TIMESTAMPDIFF(SECOND,
+                    sl.launch_timestamp,
+                    sl.suspend_timestamp)) AS lab_seconds
+FROM hastexo_stacklog AS sl
+  INNER JOIN hastexo_stack AS s ON sl.stack_id=s.id
+  INNER JOIN auth_user u ON s.learner_id=u.id
+WHERE
+  sl.status='SUSPEND_COMPLETE'
+  AND sl.suspend_timestamp<='{{ _enrollment_report_end_datetime }}'
+GROUP BY
+  u.email,
+  org,
+  course,
+  run,
+  year,
+  month
+ORDER BY
+  year,
+  month,
+  org,
+  course,
+  run,
+  u.email
+;

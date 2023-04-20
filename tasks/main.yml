@@ -43,18 +43,22 @@
     _enrollment_report_filename: "enrollment_report_{{ _enrollment_report_start_date }}_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
     _enrollment_report_pass_filename: "pass_report_{{ _enrollment_report_start_date }}_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
     _enrollment_report_percent_filename: "percent_report_{{ _enrollment_report_start_date }}_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_lab_filename: "lab_report_{{ _enrollment_report_start_date }}_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
     _enrollment_report_historical_filename: "enrollment_report_historical_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
     _enrollment_report_pass_historical_filename: "pass_report_historical_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
     _enrollment_report_percent_historical_filename: "percent_report_historical_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
+    _enrollment_report_lab_historical_filename: "lab_report_historical_{{ _enrollment_report_end_date }}{{ _enrollment_report_file_suffix }}"
 
 - name: set output file paths
   set_fact:
     _enrollment_report_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_filename }}"
     _enrollment_report_pass_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_pass_filename }}"
     _enrollment_report_percent_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_percent_filename }}"
+    _enrollment_report_lab_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_lab_filename }}"
     _enrollment_report_historical_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_historical_filename }}"
     _enrollment_report_pass_historical_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_pass_historical_filename }}"
     _enrollment_report_percent_historical_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_percent_historical_filename }}"
+    _enrollment_report_lab_historical_outfile: "{{ _enrollment_report_directory.path }}/{{ _enrollment_report_lab_historical_filename }}"
 
 - name: create tempfile for enrollment report SQL
   tempfile:
@@ -128,6 +132,30 @@
     src: grade-report-percent-historical.sql.j2
     mode: 0644
 
+- name: create tempfile for "lab" report SQL
+  tempfile:
+    state: file
+    suffix: .sql
+  register: _enrollment_report_lab_sql
+
+- name: populate "lab" report SQL
+  template:
+    dest: "{{ _enrollment_report_lab_sql.path }}"
+    src: lab-report.sql.j2
+    mode: 0644
+
+- name: create tempfile for historical "lab" report SQL
+  tempfile:
+    state: file
+    suffix: .sql
+  register: _enrollment_report_lab_historical_sql
+
+- name: populate historical "lab" report SQL
+  template:
+    dest: "{{ _enrollment_report_lab_historical_sql.path }}"
+    src: lab-report-historical.sql.j2
+    mode: 0644
+
 - name: execute scripts
   become: true
   become_user: root
@@ -139,12 +167,16 @@
       out: "{{ _enrollment_report_pass_outfile }}"
     - in: "{{ _enrollment_report_percent_sql.path }}"
       out: "{{ _enrollment_report_percent_outfile }}"
+    - in: "{{ _enrollment_report_lab_sql.path }}"
+      out: "{{ _enrollment_report_lab_outfile }}"
     - in: "{{ _enrollment_report_historical_sql.path }}"
       out: "{{ _enrollment_report_historical_outfile }}"
     - in: "{{ _enrollment_report_pass_historical_sql.path }}"
       out: "{{ _enrollment_report_pass_historical_outfile }}"
     - in: "{{ _enrollment_report_percent_historical_sql.path }}"
       out: "{{ _enrollment_report_percent_historical_outfile }}"
+    - in: "{{ _enrollment_report_lab_historical_sql.path }}"
+      out: "{{ _enrollment_report_lab_historical_outfile }}"
 
 - name: ensure output directory exists
   file:
@@ -165,9 +197,11 @@
       - "{{ enrollment_report_path }}/{{ _enrollment_report_filename }}"
       - "{{ enrollment_report_path }}/{{ _enrollment_report_pass_filename }}"
       - "{{ enrollment_report_path }}/{{ _enrollment_report_percent_filename }}"
+      - "{{ enrollment_report_path }}/{{ _enrollment_report_lab_filename }}"
       - "{{ enrollment_report_path }}/{{ _enrollment_report_historical_filename }}"
       - "{{ enrollment_report_path }}/{{ _enrollment_report_pass_historical_filename }}"
       - "{{ enrollment_report_path }}/{{ _enrollment_report_percent_historical_filename }}"
+      - "{{ enrollment_report_path }}/{{ _enrollment_report_lab_historical_filename }}"
   when: enrollment_report_mail_enable
 
 - name: send out enrollment reports
@@ -201,6 +235,8 @@
     - "{{ _enrollment_report_sql.path }}"
     - "{{ _enrollment_report_pass_sql.path }}"
     - "{{ _enrollment_report_percent_sql.path }}"
+    - "{{ _enrollment_report_lab_sql.path }}"
     - "{{ _enrollment_report_historical_sql.path }}"
     - "{{ _enrollment_report_pass_historical_sql.path }}"
     - "{{ _enrollment_report_percent_historical_sql.path }}"
+    - "{{ _enrollment_report_lab_historical_sql.path }}"
